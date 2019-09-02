@@ -2,11 +2,14 @@ Actions:
 setMode
 setBrightness
 setSpeed
-
-
+setRed
+setGreen
+setBlue
+//resetArduino // This doesnt get sent over the UART
 
 
 Modes:
+Off
 Solid
 Fade 
 Flash 
@@ -18,3 +21,10 @@ Christmas
 4th of July
 Scanner
 Candle
+
+
+Protocol: (could specify data length for multi-byte data)
+1st byte: action
+2nd byte: data
+
+
