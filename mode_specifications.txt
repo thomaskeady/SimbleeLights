@@ -1,0 +1,20 @@
+Actions:
+setMode
+setBrightness
+setSpeed
+
+
+
+
+Modes:
+Solid
+Fade 
+Flash 
+Theater Chase
+2 color TC
+Time rainbow
+Space rainbow
+Christmas
+4th of July
+Scanner
+Candle
