@@ -29,22 +29,71 @@
 #define GREEN_LED 3
 #define BLUE_LED 4
 
+const color_t DARK_GRAY = rgb(85, 85, 85);
 
 
 //
 // The ID of the button which displays screen 2
 //
-int toScreen2ButtonID;
+//int toScreen2ButtonID;
 
 //
 // The ID of the button which displays screen 1
 //
-int toScreen1ButtonID;
+//int toScreen1ButtonID;
+
+// List of buttons
+int toMainScreenButtonID;
+int toColor1ScreenButtonID;
+int toColor2ScreenButtonID;
 
 //
 // The ID of the current screen being displayed
 //
 int currentScreen;
+
+
+// Variables
+
+struct ColorScreen
+{
+  uint8_t red = 0;
+  uint8_t green = 0;
+  uint8_t blue = 0;
+
+  uint8_t rtextfield;
+  uint8_t rslider;
+  uint8_t gtextfield;
+  uint8_t gslider;
+  uint8_t btextfield;
+  uint8_t bslider;
+  uint8_t swatch;
+  uint8_t color_wheel;
+};
+
+ColorScreen color1;
+ColorScreen color2;
+
+//// Color 1 vars
+//uint8_t c1_red = 0;
+//uint8_t c1_green = 0;
+//uint8_t c1_blue = 0;
+//
+//uint8_t rtextfield;
+//uint8_t rslider;
+//uint8_t gtextfield;
+//uint8_t gslider;
+//uint8_t btextfield;
+//uint8_t bslider;
+//uint8_t swatch;
+//uint8_t color_wheel;
+//
+//
+//// Color 2 vars
+//uint8_t c2_red = 0;
+//uint8_t c2_green = 0;
+//uint8_t c2_blue = 0;
+
 
 /*
  * Traditional Arduino setup routine
@@ -129,11 +178,15 @@ void ui()
   switch (SimbleeForMobile.screen)
   {
     case 1:
-      createScreen1();
+      createMainScreen();
       break;
 
     case 2:
-      createScreen2();
+      createColor1Screen();
+      break;
+
+    case 3:
+      createColor2Screen();
       break;
 
     default:
@@ -153,12 +206,17 @@ void ui()
 void ui_event(event_t &event)
 {
   //  printEvent(event);
-  if (event.id == toScreen1ButtonID && event.type == EVENT_RELEASE && currentScreen == 2)
+  if (event.id == toMainScreenButtonID && event.type == EVENT_RELEASE && currentScreen != 1)
   {
     SimbleeForMobile.showScreen(1);
-  } else if (event.id == toScreen2ButtonID && event.type == EVENT_RELEASE && currentScreen == 1)
+  }
+  else if (event.id == toColor1ScreenButtonID && event.type == EVENT_RELEASE && currentScreen != 2)
   {
     SimbleeForMobile.showScreen(2);
+  }
+  else if (event.id == toColor2ScreenButtonID && event.type == EVENT_RELEASE && currentScreen != 3)
+  {
+    SimbleeForMobile.showScreen(3);
   }
 }
 
@@ -169,7 +227,7 @@ void ui_event(event_t &event)
  * and a button which swaps screens. Register for events on the button
  * such that we receive notifications when it is pressed.
  */
-void createScreen1()
+void createMainScreen()
 {
   //
   // Portrait mode is the default, so that isn't required
@@ -198,9 +256,8 @@ void createScreen1()
 
   //SimbleeForMobile.drawText(SimbleeForMobile.screenWidth/2, SimbleeForMobile.screenHeight/2, "1", BLACK, 40);
 
-  int butXstart = 105;
-
   // Init spacing variables
+  int butXstart = 60;
   int firstButX;
   int firstButY;
   int secondButX;
@@ -210,13 +267,25 @@ void createScreen1()
   int rowNum = 0;
 
   // Special first row for screen selector goes here
-//  firstButX = butXstart;
-//  firstButY = but1gap;
-//  // BEGIN ROW 0
-//
-//  SimbleeForMobile.drawButton(firstButY, firstButX, but1width, "Set Colors", BLACK);
+  //  firstButX = butXstart;
+  //  firstButY = but1gap;
+  //  // BEGIN ROW 0
+  //
+  //  SimbleeForMobile.drawButton(firstButY, firstButX, but1width, "Set Colors", BLACK);
+  SimbleeForMobile.drawRect(but1gap / 2, butXstart - butHeightGap / 2, but1width + but1gap, butHeight + butHeightGap, BLACK);
 
-  //butXstart += 45;
+  firstButX = butXstart;
+  firstButY = but3gap;
+  secondButX = butXstart;
+  secondButY = but3gap * 2 + but3width;
+  thirdButX = butXstart;
+  thirdButY = but3gap * 3 + but3width * 2;
+
+  toMainScreenButtonID = SimbleeForMobile.drawButton(firstButY, firstButX, but3width, "Main", RED);
+  toColor1ScreenButtonID = SimbleeForMobile.drawButton(secondButY, secondButX, but3width, "Color 1", GRAY);
+  toColor2ScreenButtonID = SimbleeForMobile.drawButton(thirdButY, thirdButX, but3width, "Color 2", GRAY);
+
+  butXstart = 104;
 
   // END ROW 0
   //++rowNum;
@@ -293,11 +362,11 @@ void createScreen1()
 
   // BEGIN ROW 7
 
-  
-// Special case for reset button
-firstButX = SimbleeForMobile.screenHeight - butHeightGap - butHeight;
-firstButY = but1gap;
-SimbleeForMobile.drawButton(firstButY, firstButX, but1width, "Reset Arduino", BLACK);
+
+  // Special case for reset button
+  firstButX = SimbleeForMobile.screenHeight - butHeightGap - butHeight;
+  firstButY = but1gap;
+  SimbleeForMobile.drawButton(firstButY, firstButX, but1width, "Reset Arduino", BLACK);
 
 
   //
@@ -314,7 +383,10 @@ SimbleeForMobile.drawButton(firstButY, firstButX, but1width, "Reset Arduino", BL
   // However, you don't want to register for events which are not required as
   // that results in extra traffic.
   //
-  SimbleeForMobile.setEvents(toScreen2ButtonID, EVENT_RELEASE);
+  //SimbleeForMobile.setEvents(toScreen2ButtonID, EVENT_RELEASE);
+  SimbleeForMobile.setEvents(toMainScreenButtonID, EVENT_RELEASE);
+  SimbleeForMobile.setEvents(toColor1ScreenButtonID, EVENT_RELEASE);
+  SimbleeForMobile.setEvents(toColor2ScreenButtonID, EVENT_RELEASE);
   SimbleeForMobile.endScreen();
 }
 
@@ -325,7 +397,7 @@ SimbleeForMobile.drawButton(firstButY, firstButX, but1width, "Reset Arduino", BL
  * and a button which swaps screens. Register for events on the button
  * such that we receive notifications when it is pressed.
  */
-void createScreen2()
+/*void createScreen2()
 {
   //
   // Default to Portrait orientation
@@ -337,7 +409,210 @@ void createScreen2()
 
   SimbleeForMobile.setEvents(toScreen1ButtonID, EVENT_RELEASE);
   SimbleeForMobile.endScreen();
+}*/
+
+
+void createColor1Screen()
+{
+
+  SimbleeForMobile.beginScreen(DARK_GRAY);
+
+  // Screen header // Get rid of the magic numbers TODO
+  SimbleeForMobile.drawText(SimbleeForMobile.screenWidth/2 - 35, 28, "Color 1", RED, 20);
+
+  // Init spacing variables // Probably should define all these globally TODO
+  int but1gap = 8;
+  int but1width = SimbleeForMobile.screenWidth - (but1gap * 2);
+  int butXstart = 60;
+  int firstButX;
+  int firstButY;
+  int secondButX;
+  int secondButY;
+  int thirdButX;
+  int thirdButY;
+  int rowNum = 0;
+  int butHeight = 37; // Empirically set, not sure if there is a way to change this
+  int butHeightGap = 6;
+  int but3gap = 8;
+  int but3width = (SimbleeForMobile.screenWidth - (but3gap * 4)) / 3;
+
+  // Special first row for screen selector goes here
+
+  SimbleeForMobile.drawRect(but1gap / 2, butXstart - butHeightGap / 2, but1width + but1gap, butHeight + butHeightGap, BLACK);
+
+  firstButX = butXstart;
+  firstButY = but3gap;
+  secondButX = butXstart;
+  secondButY = but3gap * 2 + but3width;
+  thirdButX = butXstart;
+  thirdButY = but3gap * 3 + but3width * 2;
+
+  toMainScreenButtonID = SimbleeForMobile.drawButton(firstButY, firstButX, but3width, "Main", GRAY);
+  toColor1ScreenButtonID = SimbleeForMobile.drawButton(secondButY, secondButX, but3width, "Color 1", RED);
+  toColor2ScreenButtonID = SimbleeForMobile.drawButton(thirdButY, thirdButX, but3width, "Color 2", GRAY);
+
+
+  int sliderLeftPad = 25;
+  int sliderXstart = 110;
+  int sliderTextXPad = 6;
+  int sliderTextWidth = 30;
+  int sliderWidth = 175;
+  int fieldLeftPad = 15;
+  int fieldWidth = 50;
+  int sliderHeight = 45;
+
+  SimbleeForMobile.drawText(sliderLeftPad, sliderXstart + sliderTextXPad, "R:", WHITE);
+  color1.rslider = SimbleeForMobile.drawSlider(sliderLeftPad + sliderTextWidth, sliderXstart, sliderWidth, 0, 255);
+  color1.rtextfield = SimbleeForMobile.drawTextField(sliderLeftPad + sliderTextWidth + sliderWidth + fieldLeftPad, sliderXstart, fieldWidth, 255, "", WHITE, DARK_GRAY);
+
+  SimbleeForMobile.drawText(sliderLeftPad, sliderXstart + sliderTextXPad + sliderHeight, "G:", WHITE);
+  color1.gslider = SimbleeForMobile.drawSlider(sliderLeftPad + sliderTextWidth, sliderXstart + sliderHeight, sliderWidth, 0, 255);
+  color1.gtextfield = SimbleeForMobile.drawTextField(sliderLeftPad + sliderTextWidth + sliderWidth + fieldLeftPad, sliderXstart + sliderHeight, fieldWidth, 255, "", WHITE, DARK_GRAY);
+
+  SimbleeForMobile.drawText(sliderLeftPad, sliderXstart + sliderTextXPad + sliderHeight * 2, "B:", WHITE);
+  color1.bslider = SimbleeForMobile.drawSlider(sliderLeftPad + sliderTextWidth, sliderXstart + sliderHeight * 2, sliderWidth, 0, 255);
+  color1.btextfield = SimbleeForMobile.drawTextField(sliderLeftPad + sliderTextWidth + sliderWidth + fieldLeftPad, sliderXstart + sliderHeight * 2, fieldWidth, 255, "", WHITE, DARK_GRAY);
+
+
+  // border
+  //SimbleeForMobile.drawRect(25, 200, 270, 40, WHITE);
+  color1.swatch = SimbleeForMobile.drawRect(0, 240, SimbleeForMobile.screenWidth, SimbleeForMobile.screenHeight - 240, BLACK);
+
+  color1.color_wheel = SimbleeForMobile.drawImage(COLOR_WHEEL, 12, 250);
+
+  SimbleeForMobile.setEvents(color1.color_wheel, EVENT_COLOR);
+
+  // todo; color swatch
+
+  SimbleeForMobile.endScreen();
+
+  // populate with the current red/green/blue values
+  // (this must be done after endScreen() to force it to be done each time,
+  // otherwise the initial values will be populated from the cache)
+  SimbleeForMobile.setEvents(toMainScreenButtonID, EVENT_RELEASE);
+  SimbleeForMobile.setEvents(toColor1ScreenButtonID, EVENT_RELEASE);
+  SimbleeForMobile.setEvents(toColor2ScreenButtonID, EVENT_RELEASE);
+  update1();
 }
+
+
+void update1()
+{
+  //  analogWrite(led1, red);
+  //  analogWrite(led2, green);
+  //  analogWrite(led3, blue);
+
+  SimbleeForMobile.updateValue(color1.rslider, color1.red);
+  SimbleeForMobile.updateValue(color1.rtextfield, color1.red);
+
+  SimbleeForMobile.updateValue(color1.gslider, color1.green);
+  SimbleeForMobile.updateValue(color1.gtextfield, color1.green);
+
+  SimbleeForMobile.updateValue(color1.bslider, color1.blue);
+  SimbleeForMobile.updateValue(color1.btextfield, color1.blue);
+
+  SimbleeForMobile.updateColor(color1.swatch, rgb(color1.red, color1.green, color1.blue));
+}
+
+
+void createColor2Screen()
+{
+
+  SimbleeForMobile.beginScreen(DARK_GRAY);
+
+  // Init spacing variables // TODO should probably declare these just once somewhere
+  int but1gap = 8;
+  int but1width = SimbleeForMobile.screenWidth - (but1gap * 2);
+  int butXstart = 60;
+  int firstButX;
+  int firstButY;
+  int secondButX;
+  int secondButY;
+  int thirdButX;
+  int thirdButY;
+  int rowNum = 0;
+  int butHeight = 37; // Empirically set, not sure if there is a way to change this
+  int butHeightGap = 6;
+  int but3gap = 8;
+  int but3width = (SimbleeForMobile.screenWidth - (but3gap * 4)) / 3;
+
+  // Special first row for screen selector goes here
+
+  SimbleeForMobile.drawRect(but1gap / 2, butXstart - butHeightGap / 2, but1width + but1gap, butHeight + butHeightGap, BLACK);
+
+  firstButX = butXstart;
+  firstButY = but3gap;
+  secondButX = butXstart;
+  secondButY = but3gap * 2 + but3width;
+  thirdButX = butXstart;
+  thirdButY = but3gap * 3 + but3width * 2;
+
+  toMainScreenButtonID = SimbleeForMobile.drawButton(firstButY, firstButX, but3width, "Main", GRAY);
+  toColor1ScreenButtonID = SimbleeForMobile.drawButton(secondButY, secondButX, but3width, "Color 1", GRAY);
+  toColor2ScreenButtonID = SimbleeForMobile.drawButton(thirdButY, thirdButX, but3width, "Color 2", RED);
+
+  int sliderLeftPad = 25;
+  int sliderXstart = 110;
+  int sliderTextXPad = 6;
+  int sliderTextWidth = 30;
+  int sliderWidth = 175;
+  int fieldLeftPad = 15;
+  int fieldWidth = 50;
+  int sliderHeight = 45;
+
+  SimbleeForMobile.drawText(sliderLeftPad, sliderXstart + sliderTextXPad, "R:", WHITE);
+  color2.rslider = SimbleeForMobile.drawSlider(sliderLeftPad + sliderTextWidth, sliderXstart, sliderWidth, 0, 255);
+  color2.rtextfield = SimbleeForMobile.drawTextField(sliderLeftPad + sliderTextWidth + sliderWidth + fieldLeftPad, sliderXstart, fieldWidth, 255, "", WHITE, DARK_GRAY);
+
+  SimbleeForMobile.drawText(sliderLeftPad, sliderXstart + sliderTextXPad + sliderHeight, "G:", WHITE);
+  color2.gslider = SimbleeForMobile.drawSlider(sliderLeftPad + sliderTextWidth, sliderXstart + sliderHeight, sliderWidth, 0, 255);
+  color2.gtextfield = SimbleeForMobile.drawTextField(sliderLeftPad + sliderTextWidth + sliderWidth + fieldLeftPad, sliderXstart + sliderHeight, fieldWidth, 255, "", WHITE, DARK_GRAY);
+
+  SimbleeForMobile.drawText(sliderLeftPad, sliderXstart + sliderTextXPad + sliderHeight * 2, "B:", WHITE);
+  color2.bslider = SimbleeForMobile.drawSlider(sliderLeftPad + sliderTextWidth, sliderXstart + sliderHeight * 2, sliderWidth, 0, 255);
+  color2.btextfield = SimbleeForMobile.drawTextField(sliderLeftPad + sliderTextWidth + sliderWidth + fieldLeftPad, sliderXstart + sliderHeight * 2, fieldWidth, 255, "", WHITE, DARK_GRAY);
+
+
+  // border
+  //SimbleeForMobile.drawRect(25, 200, 270, 40, WHITE);
+  color2.swatch = SimbleeForMobile.drawRect(0, 240, SimbleeForMobile.screenWidth, SimbleeForMobile.screenHeight - 240, BLACK);
+
+  color2.color_wheel = SimbleeForMobile.drawImage(COLOR_WHEEL, 12, 250);
+
+  SimbleeForMobile.setEvents(color2.color_wheel, EVENT_COLOR);
+
+  // todo; color swatch
+
+  SimbleeForMobile.endScreen();
+
+  // populate with the current red/green/blue values
+  // (this must be done after endScreen() to force it to be done each time,
+  // otherwise the initial values will be populated from the cache)
+  SimbleeForMobile.setEvents(toMainScreenButtonID, EVENT_RELEASE);
+  SimbleeForMobile.setEvents(toColor1ScreenButtonID, EVENT_RELEASE);
+  SimbleeForMobile.setEvents(toColor2ScreenButtonID, EVENT_RELEASE);
+  update2();
+}
+
+void update2()
+{
+  //  analogWrite(led1, red);
+  //  analogWrite(led2, green);
+  //  analogWrite(led3, blue);
+
+  SimbleeForMobile.updateValue(color2.rslider, color2.red);
+  SimbleeForMobile.updateValue(color2.rtextfield, color2.red);
+
+  SimbleeForMobile.updateValue(color2.gslider, color2.green);
+  SimbleeForMobile.updateValue(color2.gtextfield, color2.green);
+
+  SimbleeForMobile.updateValue(color2.bslider, color2.blue);
+  SimbleeForMobile.updateValue(color2.btextfield, color2.blue);
+
+  SimbleeForMobile.updateColor(color2.swatch, rgb(color2.red, color2.green, color2.blue));
+}
+
+
 
 /*
  * Utility method to print information regarding the given event
