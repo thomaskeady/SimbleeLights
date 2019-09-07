@@ -24,6 +24,7 @@
  */
 
 #include <SimbleeForMobile.h>
+#include "dataTypesHardLink.h"
 
 #define RED_LED 2
 #define GREEN_LED 3
@@ -46,6 +47,20 @@ const color_t DARK_GRAY = rgb(85, 85, 85);
 int toMainScreenButtonID;
 int toColor1ScreenButtonID;
 int toColor2ScreenButtonID;
+
+int off_but;
+int solid_but;
+int fade_but;
+int flash_but;
+int theaterChase_but;
+int tcTheaterChase_but;
+int timeRainbow_but;
+int spaceRainbow_but;
+int christmas_but;
+int independenceDay_but;
+int scanner_but;
+int candle_but;
+int resetArduino_but;
 
 //
 // The ID of the current screen being displayed
@@ -74,26 +89,6 @@ struct ColorScreen
 ColorScreen color1;
 ColorScreen color2;
 
-//// Color 1 vars
-//uint8_t c1_red = 0;
-//uint8_t c1_green = 0;
-//uint8_t c1_blue = 0;
-//
-//uint8_t rtextfield;
-//uint8_t rslider;
-//uint8_t gtextfield;
-//uint8_t gslider;
-//uint8_t btextfield;
-//uint8_t bslider;
-//uint8_t swatch;
-//uint8_t color_wheel;
-//
-//
-//// Color 2 vars
-//uint8_t c2_red = 0;
-//uint8_t c2_green = 0;
-//uint8_t c2_blue = 0;
-
 
 /*
  * Traditional Arduino setup routine
@@ -103,7 +98,7 @@ ColorScreen color2;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  Serial.println("Setup beginning");
+  //Serial.println("Setup beginning");
 
   pinMode(RED_LED, OUTPUT);
   pinMode(GREEN_LED, OUTPUT);
@@ -119,7 +114,7 @@ void setup() {
   // Begin Simble UI
   SimbleeForMobile.begin();
 
-  Serial.println("Setup completed");
+  //Serial.println("Setup completed");
 }
 
 /*
@@ -190,8 +185,9 @@ void ui()
       break;
 
     default:
-      Serial.print("ui: Uknown screen requested: ");
-      Serial.println(SimbleeForMobile.screen);
+      //Serial.print("ui: Uknown screen requested: "); // Any extra print statements will screw up arduino
+      //Serial.println(SimbleeForMobile.screen);
+      break;
   }
 }
 
@@ -205,7 +201,7 @@ void ui()
  */
 void ui_event(event_t &event)
 {
-  //  printEvent(event);
+  // These can happen on any screen
   if (event.id == toMainScreenButtonID && event.type == EVENT_RELEASE && currentScreen != 1)
   {
     SimbleeForMobile.showScreen(1);
@@ -218,6 +214,58 @@ void ui_event(event_t &event)
   {
     SimbleeForMobile.showScreen(3);
   }
+
+  if (1 == currentScreen)
+  {
+    // Put all the main screen stuff here
+  }
+  else if (2 == currentScreen)  // This is color1 screen
+  {
+    if (event.id == color1.color_wheel)
+    {
+      color1.red = event.red;
+      color1.green = event.green;
+      color1.blue = event.blue;
+    }
+    else if (event.id == color1.rslider || event.id == color1.rtextfield)
+    {
+      color1.red = event.value;
+    }
+    else if (event.id == color1.gslider || event.id == color1.gtextfield)
+    {
+      color1.green = event.value;
+    }
+    else if (event.id == color1.bslider || event.id == color1.btextfield)
+    {
+      color1.blue = event.value;
+    }
+    update1();
+  }
+  else if (3 == currentScreen) // This is color2 screen
+  {
+    if (event.id == color2.color_wheel)
+    {
+      color2.red = event.red;
+      color2.green = event.green;
+      color2.blue = event.blue;
+    }
+    else if (event.id == color2.rslider || event.id == color2.rtextfield)
+    {
+      color2.red = event.value;
+    }
+    else if (event.id == color2.gslider || event.id == color2.gtextfield)
+    {
+      color2.green = event.value;
+    }
+    else if (event.id == color2.bslider || event.id == color2.btextfield)
+    {
+      color2.blue = event.value;
+    }
+    update2();
+  }
+  
+  //printEvent(event);
+  
 }
 
 /*
@@ -235,7 +283,7 @@ void createMainScreen()
   // used for that orientation.
   //
   SimbleeForMobile.beginScreen(GRAY, PORTRAIT);
-  SimbleeForMobile.drawText(SimbleeForMobile.screenWidth/2 - 35, 28, "Main", RED, 20);
+  SimbleeForMobile.drawText(SimbleeForMobile.screenWidth / 2 - 28, 28, "Main", RED, 20);
 
   int butHeight = 37; // Empirically set, not sure if there is a way to change this
   int butHeightGap = 6;
@@ -299,9 +347,9 @@ void createMainScreen()
 
   // BEGIN ROW 1
 
-  SimbleeForMobile.drawButton(firstButY, firstButX, but3width, "OFF", BLACK);
-  SimbleeForMobile.drawButton(secondButY, secondButX, but3width, "Solid", BLACK);
-  SimbleeForMobile.drawButton(thirdButY, thirdButX, but3width, "Fade", BLACK);
+  off_but = SimbleeForMobile.drawButton(firstButY, firstButX, but3width, "OFF", BLACK);
+  solid_but = SimbleeForMobile.drawButton(secondButY, secondButX, but3width, "Solid", BLACK);
+  fade_but = SimbleeForMobile.drawButton(thirdButY, thirdButX, but3width, "Fade", BLACK);
 
   // END ROW 1
   ++rowNum;
@@ -313,9 +361,9 @@ void createMainScreen()
   thirdButY = but3gap * 3 + but3width * 2;
   // BEGIN ROW 2
 
-  SimbleeForMobile.drawButton(firstButY, firstButX, but3width, "Candle", BLACK);
-  SimbleeForMobile.drawButton(secondButY, secondButX, but3width, "Flash", BLACK);
-  SimbleeForMobile.drawButton(thirdButY, thirdButX, but3width, "Scanner", BLACK);
+  candle_but = SimbleeForMobile.drawButton(firstButY, firstButX, but3width, "Candle", BLACK);
+  flash_but = SimbleeForMobile.drawButton(secondButY, secondButX, but3width, "Flash", BLACK);
+  scanner_but = SimbleeForMobile.drawButton(thirdButY, thirdButX, but3width, "Scanner", BLACK);
 
   // END ROW 2
   ++rowNum;
@@ -325,8 +373,8 @@ void createMainScreen()
   secondButY = but2gap * 2 + but2width;
   // BEGIN ROW 3
 
-  SimbleeForMobile.drawButton(firstButY, firstButX, but2width, "Time Rainbow", BLACK);
-  SimbleeForMobile.drawButton(secondButY, secondButX, but2width, "Theater Chase", BLACK);
+  timeRainbow_but = SimbleeForMobile.drawButton(firstButY, firstButX, but2width, "Time Rainbow", BLACK);
+  theaterChase_but = SimbleeForMobile.drawButton(secondButY, secondButX, but2width, "Theater Chase", BLACK);
 
   // END ROW 3
   ++rowNum;
@@ -336,8 +384,8 @@ void createMainScreen()
   secondButY = but2gap * 2 + but2width;
   // BEGIN ROW 4
 
-  SimbleeForMobile.drawButton(firstButY, firstButX, but2width, "Space Rainbow", BLACK);
-  SimbleeForMobile.drawButton(secondButY, secondButX, but2width, "2 Color TC", BLACK);
+  spaceRainbow_but = SimbleeForMobile.drawButton(firstButY, firstButX, but2width, "Space Rainbow", BLACK);
+  tcTheaterChase_but = SimbleeForMobile.drawButton(secondButY, secondButX, but2width, "2 Color TC", BLACK);
 
   // END ROW 4
   ++rowNum;
@@ -347,8 +395,8 @@ void createMainScreen()
   secondButY = but2gap * 2 + but2width;
   // BEGIN ROW 5
 
-  SimbleeForMobile.drawButton(firstButY, firstButX, but2width, "4th of July", BLACK);
-  SimbleeForMobile.drawButton(secondButY, secondButX, but2width, "Christmas", BLACK);
+  independenceDay_but = SimbleeForMobile.drawButton(firstButY, firstButX, but2width, "4th of July", BLACK);
+  christmas_but = SimbleeForMobile.drawButton(secondButY, secondButX, but2width, "Christmas", BLACK);
 
   // END ROW 5
   //++rowNum;
@@ -364,28 +412,37 @@ void createMainScreen()
   // BEGIN ROW 7
 
 
-  // Special case for reset button
-  firstButX = SimbleeForMobile.screenHeight - butHeightGap - butHeight;
-  firstButY = but1gap;
-  SimbleeForMobile.drawButton(firstButY, firstButX, but1width, "Reset Arduino", BLACK);
 
   // Sliders
-  int sliderLeftPad = 8;
-  int sliderYstart = 110;
-  int sliderTextXPad = 6;
+  int sliderBuffer = 15;
+  int sliderLeftPad = 12;
+  int sliderTextXPad = 25;
+  int sliderYstart = firstButX + butHeight + sliderBuffer;
   int sliderTextWidth = 30;
-  int sliderWidth = 192;
+  int sliderWidth = 230;
   int fieldLeftPad = 15;
   int fieldWidth = 50;
-  int sliderHeight = 45;
-  
+  int sliderHeight = 50;
+  int textHeight = 33;
+
   // Speed
-  //SimbleeForMobile.drawText(sliderLeftPad, sliderYstart + sliderTextXPad, "R:", WHITE);
-  int speedSlider = SimbleeForMobile.drawSlider(sliderLeftPad + sliderTextWidth, sliderYstart, sliderWidth, 0, 255);
-  int speedField = SimbleeForMobile.drawTextField(sliderLeftPad + sliderTextWidth + sliderWidth + fieldLeftPad, sliderYstart, fieldWidth, 255, "", WHITE, DARK_GRAY);
+  SimbleeForMobile.drawText(sliderTextXPad, sliderYstart, "Speed", BLACK);
+  int speedSlider = SimbleeForMobile.drawSlider(sliderLeftPad, sliderYstart + textHeight, sliderWidth, 0, 255);
+  int speedField = SimbleeForMobile.drawTextField(sliderLeftPad + sliderWidth + fieldLeftPad, sliderYstart + textHeight, fieldWidth, 255, "", WHITE, DARK_GRAY);
 
   // Brightness
+  SimbleeForMobile.drawText(sliderTextXPad, sliderYstart + textHeight + sliderHeight, "Brightness", BLACK);
+  int brightnessSlider = SimbleeForMobile.drawSlider(sliderLeftPad, sliderYstart + textHeight * 2 + sliderHeight, sliderWidth, 0, 255);
+  int brightnessField = SimbleeForMobile.drawTextField(sliderLeftPad + sliderWidth + fieldLeftPad, sliderYstart + textHeight * 2 + sliderHeight, fieldWidth, 255, "", WHITE, DARK_GRAY);
 
+
+
+  // Special case for reset button
+  firstButX = SimbleeForMobile.screenHeight - (butHeightGap * 3) - butHeight; // If its too low, can't press
+  firstButY = but1gap;
+  resetArduino_but = SimbleeForMobile.drawButton(firstButY, firstButX, but1width, "Reset Arduino", BLACK);
+
+  //SimbleeForMobile.drawText(100, 10, "Big X", WHITE);
 
   //
   // Receive notifications when a "release" occurs on the button.
@@ -436,7 +493,7 @@ void createColor1Screen()
   SimbleeForMobile.beginScreen(DARK_GRAY);
 
   // Screen header // Get rid of the magic numbers TODO
-  SimbleeForMobile.drawText(SimbleeForMobile.screenWidth/2 - 31, 28, "Color 1", RED, 20);
+  SimbleeForMobile.drawText(SimbleeForMobile.screenWidth / 2 - 31, 28, "Color 1", RED, 20);
 
   // Init spacing variables // Probably should define all these globally TODO
   int but1gap = 8;
@@ -537,7 +594,7 @@ void createColor2Screen()
 {
 
   SimbleeForMobile.beginScreen(DARK_GRAY);
-  SimbleeForMobile.drawText(SimbleeForMobile.screenWidth/2 - 31, 28, "Color 2", RED, 20);
+  SimbleeForMobile.drawText(SimbleeForMobile.screenWidth / 2 - 31, 28, "Color 2", RED, 20);
 
   // Init spacing variables // TODO should probably declare these just once somewhere
   int but1gap = 8;
