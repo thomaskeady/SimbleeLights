@@ -2,9 +2,8 @@ Actions:
 setMode
 setBrightness
 setSpeed
-setRed
-setGreen
-setBlue
+setColor1
+setColor2
 //resetArduino // This doesnt get sent over the UART
 
 
@@ -26,5 +25,8 @@ Candle
 Protocol: (could specify data length for multi-byte data)
 1st byte: action
 2nd byte: data
+3rd byte: data (only for setting colors)
+4th byte: data (only for setting colors)
+
 
 

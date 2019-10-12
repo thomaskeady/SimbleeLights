@@ -29,8 +29,14 @@
 #define RED_LED 2
 #define GREEN_LED 3
 #define BLUE_LED 4
+#define RESET_PIN 5
 
-const color_t DARK_GRAY = rgb(85, 85, 85);
+// Comment this out to disable all prints
+#define SERIAL_PRINT_ENABLED
+
+
+
+static const color_t DARK_GRAY = rgb(85, 85, 85);
 
 
 //
@@ -44,28 +50,36 @@ const color_t DARK_GRAY = rgb(85, 85, 85);
 //int toScreen1ButtonID;
 
 // List of buttons
-int toMainScreenButtonID;
-int toColor1ScreenButtonID;
-int toColor2ScreenButtonID;
+static int toMainScreenButtonID;
+static int toColor1ScreenButtonID;
+static int toColor2ScreenButtonID;
 
-int off_but;
-int solid_but;
-int fade_but;
-int flash_but;
-int theaterChase_but;
-int tcTheaterChase_but;
-int timeRainbow_but;
-int spaceRainbow_but;
-int christmas_but;
-int independenceDay_but;
-int scanner_but;
-int candle_but;
-int resetArduino_but;
+static int off_but;
+static int solid_but;
+static int fade_but;
+static int flash_but;
+static int theaterChase_but;
+static int tcTheaterChase_but;
+static int timeRainbow_but;
+static int spaceRainbow_but;
+static int christmas_but;
+static int independenceDay_but;
+static int scanner_but;
+static int candle_but;
+static int resetArduino_but;
+
+// List of sliders
+static int speed_slider;
+static int brightness_slider;
+
+// List of fields
+static int speed_field;
+static int brightness_field;
 
 //
 // The ID of the current screen being displayed
 //
-int currentScreen;
+static int currentScreen;
 
 
 // Variables
@@ -86,9 +100,14 @@ struct ColorScreen
   uint8_t color_wheel;
 };
 
-ColorScreen color1;
-ColorScreen color2;
+static ColorScreen color1;
+static ColorScreen color2;
 
+static uint8_t speed_val;
+static uint8_t brightness_val;
+
+// For sending to arduino
+static uint8_t txBuff[MAX_MESSAGE_LENGTH];
 
 /*
  * Traditional Arduino setup routine
@@ -97,6 +116,9 @@ ColorScreen color2;
  */
 void setup() {
   // put your setup code here, to run once:
+  pinMode(RESET_PIN, OUTPUT);
+  digitalWrite(RESET_PIN, HIGH);
+
   Serial.begin(9600);
   //Serial.println("Setup beginning");
 
@@ -105,8 +127,9 @@ void setup() {
   pinMode(BLUE_LED, OUTPUT);
   digitalWrite(RED_LED, HIGH);
 
-  SimbleeForMobile.deviceName = "2 Screens";
-  SimbleeForMobile.advertisementData = "Sample";
+
+  SimbleeForMobile.deviceName = "MainLights";
+  SimbleeForMobile.advertisementData = "One at a time pls";
 
   // use a shared cache
   SimbleeForMobile.domain = "twoscreens.simblee.com";
@@ -218,6 +241,88 @@ void ui_event(event_t &event)
   if (1 == currentScreen)
   {
     // Put all the main screen stuff here
+    if (event.id == off_but)
+    {
+      txBuff[0] = SET_MODE;
+      txBuff[1] = OFF;
+      sendMessage(SET_MODE_LEN);
+    }
+    else if (event.id == solid_but)
+    {
+      txBuff[0] = SET_MODE;
+      txBuff[1] = SOLID;
+      sendMessage(SET_MODE_LEN);
+    }
+    else if (event.id == flash_but)
+    {
+      txBuff[0] = SET_MODE;
+      txBuff[1] = FLASH;
+      sendMessage(SET_MODE_LEN);
+    }
+    else if (event.id == theaterChase_but)
+    {
+      txBuff[0] = SET_MODE;
+      txBuff[1] = THEATER_CHASE;
+      sendMessage(SET_MODE_LEN);
+    }
+    else if (event.id == tcTheaterChase_but)
+    {
+      txBuff[0] = SET_MODE;
+      txBuff[1] = TWO_COLOR_THEATER_CHASE;
+      sendMessage(SET_MODE_LEN);
+    }
+    else if (event.id == timeRainbow_but)
+    {
+      txBuff[0] = SET_MODE;
+      txBuff[1] = TIME_RAINBOW;
+      sendMessage(SET_MODE_LEN);
+    }
+    else if (event.id == spaceRainbow_but)
+    {
+      txBuff[0] = SET_MODE;
+      txBuff[1] = SPACE_RAINBOW;
+      sendMessage(SET_MODE_LEN);
+    }
+    else if (event.id == independenceDay_but)
+    {
+      txBuff[0] = SET_MODE;
+      txBuff[1] = INDEPENDENCE_DAY;
+      sendMessage(SET_MODE_LEN);
+    }
+    else if (event.id == scanner_but)
+    {
+      txBuff[0] = SET_MODE;
+      txBuff[1] = SCANNER;
+      sendMessage(SET_MODE_LEN);
+    }
+    else if (event.id == candle_but)
+    {
+      txBuff[0] = SET_MODE;
+      txBuff[1] = CANDLE;
+      sendMessage(SET_MODE_LEN);
+    }
+    else if (event.id == speed_slider || event.id == speed_field)
+    {
+      speed_val = event.value;
+      txBuff[0] = SET_SPEED;
+      txBuff[1] = event.value;
+      sendMessage(SET_SPEED_LEN);
+    }
+    else if (event.id == brightness_slider || event.id == brightness_field)
+    {
+      brightness_val = event.value;
+      txBuff[0] = SET_BRIGHTNESS;
+      txBuff[1] = event.value;
+      sendMessage(SET_BRIGHTNESS_LEN);
+    }
+
+    else if (event.id == resetArduino_but)
+    {
+      digitalWrite(RESET_PIN, LOW);
+      delay(500);
+      digitalWrite(RESET_PIN, HIGH);
+    }
+    updateMain();
   }
   else if (2 == currentScreen)  // This is color1 screen
   {
@@ -263,9 +368,26 @@ void ui_event(event_t &event)
     }
     update2();
   }
-  
+
   //printEvent(event);
-  
+
+}
+
+// Send bytes to arduino
+void sendMessage(int len)
+{
+  for (int i = 0; i < len; ++i)
+  {
+#ifdef SERIAL_PRINT_ENABLED
+    Serial.print("[sendMessage] Sending byte ");
+    Serial.print(txBuff[i]);
+#endif
+    Serial.write(txBuff[i]);
+#ifdef SERIAL_PRINT_ENABLED
+    Serial.println("... sent");
+#endif
+  }
+  // Done??
 }
 
 /*
@@ -282,7 +404,17 @@ void createMainScreen()
   // here, but shown for completeness. LANDSCAPE could be
   // used for that orientation.
   //
+
+#ifdef SERIAL_PRINT_ENABLED
+  Serial.println("[createMainScreen] Before endScreen");
+#endif
+
   SimbleeForMobile.beginScreen(GRAY, PORTRAIT);
+
+#ifdef SERIAL_PRINT_ENABLED
+  Serial.println("[createMainScreen] After endScreen");
+#endif
+
   SimbleeForMobile.drawText(SimbleeForMobile.screenWidth / 2 - 28, 28, "Main", RED, 20);
 
   int butHeight = 37; // Empirically set, not sure if there is a way to change this
@@ -427,13 +559,13 @@ void createMainScreen()
 
   // Speed
   SimbleeForMobile.drawText(sliderTextXPad, sliderYstart, "Speed", BLACK);
-  int speedSlider = SimbleeForMobile.drawSlider(sliderLeftPad, sliderYstart + textHeight, sliderWidth, 0, 255);
-  int speedField = SimbleeForMobile.drawTextField(sliderLeftPad + sliderWidth + fieldLeftPad, sliderYstart + textHeight, fieldWidth, 255, "", WHITE, DARK_GRAY);
+  speed_slider = SimbleeForMobile.drawSlider(sliderLeftPad, sliderYstart + textHeight, sliderWidth, 0, 255);
+  speed_field = SimbleeForMobile.drawTextField(sliderLeftPad + sliderWidth + fieldLeftPad, sliderYstart + textHeight, fieldWidth, 255, "", WHITE, DARK_GRAY);
 
   // Brightness
   SimbleeForMobile.drawText(sliderTextXPad, sliderYstart + textHeight + sliderHeight, "Brightness", BLACK);
-  int brightnessSlider = SimbleeForMobile.drawSlider(sliderLeftPad, sliderYstart + textHeight * 2 + sliderHeight, sliderWidth, 0, 255);
-  int brightnessField = SimbleeForMobile.drawTextField(sliderLeftPad + sliderWidth + fieldLeftPad, sliderYstart + textHeight * 2 + sliderHeight, fieldWidth, 255, "", WHITE, DARK_GRAY);
+  brightness_slider = SimbleeForMobile.drawSlider(sliderLeftPad, sliderYstart + textHeight * 2 + sliderHeight, sliderWidth, 0, 255);
+  brightness_field = SimbleeForMobile.drawTextField(sliderLeftPad + sliderWidth + fieldLeftPad, sliderYstart + textHeight * 2 + sliderHeight, fieldWidth, 255, "", WHITE, DARK_GRAY);
 
 
 
@@ -462,7 +594,29 @@ void createMainScreen()
   SimbleeForMobile.setEvents(toMainScreenButtonID, EVENT_RELEASE);
   SimbleeForMobile.setEvents(toColor1ScreenButtonID, EVENT_RELEASE);
   SimbleeForMobile.setEvents(toColor2ScreenButtonID, EVENT_RELEASE);
+
+#ifdef SERIAL_PRINT_ENABLED
+  Serial.println("[createMainScreen] Before endScreen");
+#endif
+
   SimbleeForMobile.endScreen();
+
+#ifdef SERIAL_PRINT_ENABLED
+  Serial.println("[createMainScreen] After endScreen");
+#endif
+
+  updateMain();
+}
+
+void updateMain()
+{
+  SimbleeForMobile.updateValue(speed_slider, speed_val);
+  SimbleeForMobile.updateValue(speed_field, speed_val);
+
+  SimbleeForMobile.updateValue(brightness_slider, brightness_val);
+  SimbleeForMobile.updateValue(brightness_field, brightness_val);
+
+
 }
 
 /*
@@ -490,7 +644,15 @@ void createMainScreen()
 void createColor1Screen()
 {
 
+#ifdef SERIAL_PRINT_ENABLED
+  Serial.println("[createColor1Screen] Before beginScreen");
+#endif
+
   SimbleeForMobile.beginScreen(DARK_GRAY);
+
+#ifdef SERIAL_PRINT_ENABLED
+  Serial.println("[createColor1Screen] After beginScreen");
+#endif
 
   // Screen header // Get rid of the magic numbers TODO
   SimbleeForMobile.drawText(SimbleeForMobile.screenWidth / 2 - 31, 28, "Color 1", RED, 20);
@@ -559,7 +721,15 @@ void createColor1Screen()
 
   // todo; color swatch
 
+#ifdef SERIAL_PRINT_ENABLED
+  Serial.println("[createColor2Screen] Before endScreen");
+#endif
+
   SimbleeForMobile.endScreen();
+
+#ifdef SERIAL_PRINT_ENABLED
+  Serial.println("[createColor2Screen] After endScreen");
+#endif
 
   // populate with the current red/green/blue values
   // (this must be done after endScreen() to force it to be done each time,
@@ -592,8 +762,16 @@ void update1()
 
 void createColor2Screen()
 {
+#ifdef SERIAL_PRINT_ENABLED
+  Serial.println("[createColor2Screen] Before beginScreen");
+#endif
 
   SimbleeForMobile.beginScreen(DARK_GRAY);
+
+#ifdef SERIAL_PRINT_ENABLED
+  Serial.println("[createColor2Screen] After beginScreen");
+#endif
+
   SimbleeForMobile.drawText(SimbleeForMobile.screenWidth / 2 - 31, 28, "Color 2", RED, 20);
 
   // Init spacing variables // TODO should probably declare these just once somewhere
@@ -659,7 +837,15 @@ void createColor2Screen()
 
   // todo; color swatch
 
+#ifdef SERIAL_PRINT_ENABLED
+  Serial.println("[createColor2Screen] Before endScreen");
+#endif
+
   SimbleeForMobile.endScreen();
+
+#ifdef SERIAL_PRINT_ENABLED
+  Serial.println("[createColor2Screen] After endScreen");
+#endif
 
   // populate with the current red/green/blue values
   // (this must be done after endScreen() to force it to be done each time,

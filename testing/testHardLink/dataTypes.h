@@ -21,15 +21,20 @@ typedef enum Action_tag
   SET_MODE = 0x00,
   SET_BRIGHTNESS = 0x01,
   SET_SPEED = 0x02,
-  SET_RED = 0x03,
-  SET_GREEN = 0x04,
-  SET_BLUE = 0x05
+  SET_COLOR1 = 0x03,
+  SET_COLOR2 = 0x04
 } Action_t;
 
+// Including the Mode byte
 typedef enum ModeDataLength_tag 
 {
-  
+  SET_MODE_LEN = 2,
+  SET_BRIGHTNESS_LEN = 2,
+  SET_SPEED_LEN = 2,
+  SET_COLOR1_LEN = 4,
+  SET_COLOR2_LEN = 4
 } ModeDataLength_t;
 
+#define MAX_MESSAGE_LENGTH 4 // Is there a better way?
 #define SERIAL_BAUD 9600
 
