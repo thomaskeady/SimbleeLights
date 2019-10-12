@@ -20,7 +20,9 @@ CRGB leds[NUM_LEDS];
 
 // Major pieces of code pulled from FastLED ColorPalette example
 
-int updatesPerSecond = 100;
+//int updatesPerSecond = 100;
+int updateDelay_ms = 10;
+unsigned long lastTime_ms = 0;
 
 // Coloring variables
 CRGBPalette16 currentPalette;
@@ -40,7 +42,7 @@ struct Color
 };
 
 Color color1;
-Color color2;
+//Color color2;
 
 // Receiving variables
 int rxBuff[MAX_MESSAGE_LENGTH];
@@ -116,7 +118,8 @@ void loop() {
 #ifdef SERIAL_PRINT_ENABLED
         Serial.println("SET_SPEED");
 #endif
-        updatesPerSecond = rxBuff[1];
+        //updatesPerSecond = rxBuff[1];
+        updateDelay_ms = 256 - rxBuff[1]; // 256 so it can never be 0
 
         break;
       case SET_COLOR1:
@@ -130,17 +133,17 @@ void loop() {
         color1.green = rxBuff[3];
         //currentPalette = myRedWhiteBluePalette_p;
         break;
-      case SET_COLOR2:
-#ifdef SERIAL_PRINT_ENABLED
-        Serial.println("SET_COLOR2");
-#endif
-        rxBuff[2] = Serial.read();
-        rxBuff[3] = Serial.read();
-        color2.red = rxBuff[1];
-        color2.blue = rxBuff[2];
-        color2.green = rxBuff[3];
-        //SetupPurpleAndGreenPalette();
-        break;
+      //      case SET_COLOR2:
+      //#ifdef SERIAL_PRINT_ENABLED
+      //        Serial.println("SET_COLOR2");
+      //#endif
+      //        rxBuff[2] = Serial.read();
+      //        rxBuff[3] = Serial.read();
+      //        color2.red = rxBuff[1];
+      //        color2.blue = rxBuff[2];
+      //        color2.green = rxBuff[3];
+      //        //SetupPurpleAndGreenPalette();
+      //        break;
       default:
 #ifdef SERIAL_PRINT_ENABLED
         Serial.println("******** DEFAULT ********");
@@ -171,19 +174,25 @@ void loop() {
 
   }
 
-  // Run strip (maybe dont put this here?)
-  if (usingPalettes)
-  {
-    FillLEDsFromPaletteColors( startIndex);
-  }
-  else
-  {
-    //FillLEDsWithoutPalettes(startIndex);
-  }
-  startIndex = startIndex + 1; /* motion speed */
 
-  FastLED.show();
-  FastLED.delay(1000 / updatesPerSecond);
+  if (millis() - lastTime_ms > updateDelay_ms) {
+    // Run strip (maybe dont put this here?)
+    if (usingPalettes)
+    {
+      FillLEDsFromPaletteColors( startIndex);
+    }
+    else
+    {
+      //FillLEDsWithoutPalettes(startIndex);
+    }
+    FastLED.show();
+
+    startIndex = startIndex + 1; /* motion speed */
+    lastTime_ms = millis();
+  }
+
+  //FastLED.show();
+  //FastLED.delay(1000 / updatesPerSecond);
 
   //  #ifdef SERIAL_PRINT_ENABLED
   //  Serial.print("Curr palette = ");
@@ -197,12 +206,12 @@ void setMode()
 {
 
   CRGB c1 = CHSV(color1.red, color1.green, color1.blue);
-  CRGB c2 = CHSV(color2.red, color2.green, color2.blue);
+  //CRGB c2 = CHSV(color2.red, color2.green, color2.blue);
 
   switch (rxBuff[1])
   {
     case OFF:
-    #ifdef SERIAL_PRINT_ENABLED
+#ifdef SERIAL_PRINT_ENABLED
       Serial.println("OFF");
 #endif
       currentPalette = myBlackPalette_p;
@@ -362,4 +371,3 @@ const TProgmemPalette16 myBlackPalette_p PROGMEM =
   CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black,
   CRGB::Black, CRGB::Black, CRGB::Black, CRGB::Black
 };
-
